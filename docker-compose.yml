@@ -1,0 +1,24 @@
+services:
+  testassesment:
+    image: ${DOCKER_REGISTRY-}testassesment
+    build:
+      context: .
+      dockerfile: TestAssesment/Dockerfile
+    depends_on:
+      mssql:
+        condition: service_healthy
+        restart: true
+
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: mssql
+    ports:
+      - "1433:1433"
+    environment:
+      SA_PASSWORD : "YourStrong@Password"
+      ACCEPT_EULA: "Y"
+    healthcheck:
+      test: [ "CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -U sa -P YourStrong@Password -Q 'SELECT 1' -C || exit 1" ]
+      interval: 3s
+      timeout: 3s
+      retries: 5
