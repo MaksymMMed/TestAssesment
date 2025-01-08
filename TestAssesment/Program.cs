@@ -2,10 +2,45 @@
 using TestAssesment.Data;
 using TestAssesment.Utils;
 
-//run db on docker
+//run database on docker before running this code
 //docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=YourStrong@Password" -p 1433:1433 --name mssql -d mcr.microsoft.com/mssql/server
 
-string csvFilePath = "../../../sample-cab-data.csv";
+string? csvFilePath = string.Empty;
+bool isValidFile = false;
+
+while (!isValidFile)
+{
+    Console.WriteLine("Enter the path to the CSV file:");
+    csvFilePath = Console.ReadLine();
+
+    if (string.IsNullOrWhiteSpace(csvFilePath))
+    {
+        Console.WriteLine("Error: The file path cannot be empty. Please try again.");
+        continue;
+    }
+
+    try
+    {
+        if (!File.Exists(csvFilePath))
+        {
+            Console.WriteLine($"Error: File not found at '{csvFilePath}'. Please try again.");
+            continue;
+        }
+
+        if (Path.GetExtension(csvFilePath).ToLower() != ".csv")
+        {
+            Console.WriteLine("Error: The file must have a .csv extension. Please try again.");
+            continue;
+        }
+
+        isValidFile = true;
+        Console.WriteLine("File found and validated.");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"An error occurred: {ex.Message}. Please try again.");
+    }
+}
 
 var csvFile = new CsvFileDescription
 {
@@ -45,12 +80,15 @@ foreach (var record in distinct)
 }
 
 // Convert to UTC
-TimeZoneInfo ukraineZone = TimeZoneInfo.FindSystemTimeZoneById("Europe/Kiev");
+TimeZoneInfo estTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
 foreach (var record in distinct)
 {
-    record.TpepPickupDatetime = TimeZoneInfo.ConvertTimeToUtc(record.TpepPickupDatetime, ukraineZone);
-    record.TpepDropoffDatetime = TimeZoneInfo.ConvertTimeToUtc(record.TpepDropoffDatetime, ukraineZone);
+    record.TpepPickupDatetime = TimeZoneInfo.ConvertTimeToUtc(record.TpepPickupDatetime, estTimeZone);
+    record.TpepDropoffDatetime = TimeZoneInfo.ConvertTimeToUtc(record.TpepDropoffDatetime, estTimeZone);
 }
+
+// If csv file is 10GB, I will use batch processing and apply parallel processing to speed up the process.
+// Records will be divided into bathces of 50,000 rows, and I will apply Paralel.ForEach to them
 
 
 // Db Actions
@@ -58,7 +96,10 @@ DbUtils.CreateDatabase();
 DbUtils.CreateTable();
 DbUtils.InsertData(distinct);
 
+
 // Queries
+Console.WriteLine("\n");
+DbUtils.RowsCount();
 Console.WriteLine("\n");
 DbUtils.LongestTripDistance();
 Console.WriteLine("\n");

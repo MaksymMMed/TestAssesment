@@ -104,11 +104,6 @@ namespace TestAssesment.Utils
 
                     bulkCopy.DestinationTableName = "trip_data";
                     bulkCopy.BatchSize = 1000;
-                    //bulkCopy.NotifyAfter = 1000;
-                    //bulkCopy.SqlRowsCopied += (sender, e) =>
-                    //{
-                    //    Console.WriteLine($"{e.RowsCopied} rows copied.");
-                    //};
 
                     try
                     {
@@ -139,6 +134,33 @@ namespace TestAssesment.Utils
                             while (reader.Read())
                             {
                                 Console.WriteLine($"{reader["PULocationID"]} | {reader["DOLocationID"]} | {reader["trip_distance"]}");
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+        }
+
+        public static void RowsCount()
+        {
+            string query = $"USE {DbName} SELECT COUNT(*) as TotalCount FROM trip_data";
+            try
+            {
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    connection.Open();
+                    using (var command = new SqlCommand(query, connection))
+                    {
+                        using (var reader = command.ExecuteReader())
+                        {
+                            Console.WriteLine("Rows Total Count");
+                            while (reader.Read())
+                            {
+                                Console.WriteLine($"{reader["TotalCount"]}");
                             }
                         }
                     }
